@@ -1,0 +1,94 @@
+# =========================================================
+# .gitignore
+# =========================================================
+#
+# Este arquivo informa ao Git quais arquivos e pastas
+# NÃO devem ser versionados.
+#
+# Objetivo:
+# - evitar subir arquivos temporários;
+# - evitar subir ambientes virtuais;
+# - evitar subir modelos treinados muito pesados;
+# - evitar cache e lixo do sistema operacional.
+#
+# =========================================================
+
+
+# =========================================================
+# AMBIENTE VIRTUAL PYTHON
+# =========================================================
+#
+# A pasta venv contém bibliotecas instaladas localmente.
+# Não deve ser enviada ao GitHub.
+#
+venv/
+
+
+# =========================================================
+# CACHE DO PYTHON
+# =========================================================
+#
+# Arquivos temporários gerados automaticamente.
+#
+__pycache__/
+*.pyc
+
+
+# =========================================================
+# JUPYTER NOTEBOOKS
+# =========================================================
+#
+# Arquivos temporários criados pelo Jupyter.
+#
+.ipynb_checkpoints/
+
+
+# =========================================================
+# MODELOS TREINADOS
+# =========================================================
+#
+# Modelos podem ocupar muito espaço.
+# Não é recomendado subir para o GitHub.
+#
+trained_models/
+
+
+# =========================================================
+# OUTPUTS E RESULTADOS
+# =========================================================
+#
+# Arquivos gerados durante execução:
+# gráficos, métricas, tabelas etc.
+#
+outputs/
+
+
+# =========================================================
+# DADOS PROCESSADOS
+# =========================================================
+#
+# Dados derivados podem ser recriados.
+#
+data/processed/
+data/interim/
+
+
+# =========================================================
+# CONFIGURAÇÕES DO VS CODE
+# =========================================================
+#
+.vscode/
+
+
+# =========================================================
+# LOGS
+# =========================================================
+#
+*.log
+
+
+# =========================================================
+# ARQUIVOS DE SISTEMA
+# =========================================================
+#
+.DS_Store

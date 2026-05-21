@@ -324,6 +324,12 @@ class LSTMTrainer:
             y_pred=predictions
         )
 
+        self.save_predictions(
+            target=target,
+            window_size=window_size,
+            y_true=y_test_original,
+            y_pred=predictions
+        )
         result = {
             "target": target,
             "window_size": window_size,
@@ -414,3 +420,34 @@ class LSTMTrainer:
         results_df = self.save_results()
 
         return results_df
+    
+    def save_predictions(
+        self,
+        target: str,
+        window_size: int,
+        y_true: np.ndarray,
+        y_pred: np.ndarray
+    ):
+        """
+        Salva valores reais e previstos para geração de gráficos.
+        """
+        
+        predictions_dir = Path("outputs/predictions")
+        predictions_dir.mkdir(parents=True, exist_ok=True)
+
+        predictions_df = pd.DataFrame({
+            "target": target,
+            "window_size": window_size,
+            "y_true": y_true,
+            "y_pred": y_pred,
+            "error": y_pred - y_true
+        })
+
+        output_path = (
+            predictions_dir /
+            f"lstm_predictions_{target.lower()}_window_{window_size}.csv"
+        )
+
+        predictions_df.to_csv(output_path, index=False)
+
+        print(f"[INFO] Previsões salvas em: {output_path}")

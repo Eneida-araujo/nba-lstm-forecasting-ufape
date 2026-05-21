@@ -34,6 +34,7 @@ from src.features.feature_sets_summary import FeatureSetsSummary
 from src.features.feature_experiments import FeatureExperimentRunner
 from src.models.windowing import SlidingWindowGenerator
 from src.models.lstm_trainer import LSTMTrainer
+from src.visualization.plots import PlotGenerator
 
 def main():
 
@@ -314,6 +315,17 @@ def main():
         f"{final_predictions_path}"
     )
 
+    # =====================================================
+    # RF6 - VISUALIZAÇÕES
+    # =====================================================
+
+    plot_generator = PlotGenerator(
+        predictions_dir="outputs/predictions",
+        metrics_dir="outputs/metrics",
+        output_dir="outputs/figures"
+    )
+
+    plot_generator.run_best_models()
 
 if __name__ == "__main__":
     main()

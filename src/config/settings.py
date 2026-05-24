@@ -48,8 +48,7 @@ DATA_PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
 OUTPUTS_DIR = BASE_DIR / "outputs"
 
-MODELS_DIR = BASE_DIR / "trained_models"
-
+MODELS_DIR = OUTPUTS_DIR / "models"
 
 # =========================================================
 # ARQUIVOS DAS BASES
@@ -88,9 +87,8 @@ RANDOM_STATE = 42
 #
 SELECTED_TEAMS = [
     "Boston Celtics",
-    "Oklahoma City Thunder"
+    "Denver Nuggets"
 ]
-
 
 # =========================================================
 # SLIDING WINDOWS

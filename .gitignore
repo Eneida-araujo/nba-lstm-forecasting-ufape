@@ -1,94 +1,34 @@
 # =========================================================
-# .gitignore
+# Ambiente Virtual Python
 # =========================================================
-#
-# Este arquivo informa ao Git quais arquivos e pastas
-# NÃO devem ser versionados.
-#
-# Objetivo:
-# - evitar subir arquivos temporários;
-# - evitar subir ambientes virtuais;
-# - evitar subir modelos treinados muito pesados;
-# - evitar cache e lixo do sistema operacional.
-#
-# =========================================================
-
-
-# =========================================================
-# AMBIENTE VIRTUAL PYTHON
-# =========================================================
-#
-# A pasta venv contém bibliotecas instaladas localmente.
-# Não deve ser enviada ao GitHub.
-#
 venv/
 
-
 # =========================================================
-# CACHE DO PYTHON
+# Cache Python
 # =========================================================
-#
-# Arquivos temporários gerados automaticamente.
-#
 __pycache__/
 *.pyc
 
+# =========================================================
+# Arquivos de Sistema
+# =========================================================
+.DS_Store
+Thumbs.db
 
 # =========================================================
-# JUPYTER NOTEBOOKS
+# Arquivos temporários do VSCode/Jupyter
 # =========================================================
-#
-# Arquivos temporários criados pelo Jupyter.
-#
+.vscode/
 .ipynb_checkpoints/
 
-
 # =========================================================
-# MODELOS TREINADOS
+# Modelos treinados muito pesados
+# (mantém métricas e gráficos para conferência)
 # =========================================================
-#
-# Modelos podem ocupar muito espaço.
-# Não é recomendado subir para o GitHub.
-#
+outputs/models/
 trained_models/
 
-
 # =========================================================
-# OUTPUTS E RESULTADOS
+# Logs temporários
 # =========================================================
-#
-# Arquivos gerados durante execução:
-# gráficos, métricas, tabelas etc.
-#
-outputs/
-
-
-# =========================================================
-# DADOS PROCESSADOS
-# =========================================================
-#
-# Dados derivados podem ser recriados.
-#
-data/processed/
-data/interim/
-
-
-# =========================================================
-# CONFIGURAÇÕES DO VS CODE
-# =========================================================
-#
-.vscode/
-
-
-# =========================================================
-# LOGS
-# =========================================================
-#
 *.log
-
-
-# =========================================================
-# ARQUIVOS DE SISTEMA
-# =========================================================
-#
-.DS_Store

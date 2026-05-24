@@ -5,12 +5,20 @@ main.py
 
 Arquivo principal do projeto.
 
-Fluxo atual:
+Fluxo:
 1. Carregar bases.
-2. Fazer merge.
-3. Preprocessar.
-4. Criar features.
-5. Validar.
+2. Merge dos datasets.
+3. Pré-processamento.
+4. Engenharia de features.
+5. Correlation Filter.
+6. Seleção por p-value.
+7. Random Forest Feature Importance.
+8. Construção dos Feature Sets.
+9. Benchmark experimental.
+10. Sliding Windows.
+11. Treinamento LSTM.
+12. Predições finais.
+13. Geração de gráficos e métricas.
 
 =========================================================
 """

@@ -15,7 +15,7 @@ Inclui:
 """
 
 import numpy as np
-import pandas as pd
+import scipy.stats as stats
 
 from sklearn.metrics import (
     mean_absolute_error,
@@ -30,35 +30,21 @@ from sklearn.metrics import (
 
 class ModelEvaluator:
 
-    def __init__(
-        self,
-        confidence_level: float = 0.95
-    ):
+    def __init__(self, confidence_level: float = 0.95):
         self.confidence_level = confidence_level
 
-    # =====================================================
-    # REGRESSION METRICS
-    # =====================================================
-
-    def calculate_mape(
-        self,
-        y_true,
-        y_pred
-    ):
-
+    def calculate_mape(self, y_true, y_pred):
         y_true_safe = np.where(y_true == 0, 1, y_true)
 
         return np.mean(
             np.abs((y_true - y_pred) / y_true_safe)
         ) * 100
 
-    def regression_metrics(
-        self,
-        y_true,
-        y_pred
-    ):
+    def regression_metrics(self, y_true, y_pred):
         """
         Calcula métricas de regressão.
+        A margem de erro foi calculada como z * RMSE,
+        representando incerteza aproximada da predição.
         """
 
         mae = mean_absolute_error(y_true, y_pred)
@@ -67,15 +53,9 @@ class ModelEvaluator:
             mean_squared_error(y_true, y_pred)
         )
 
-        mape = self.calculate_mape(
-            y_true,
-            y_pred
-        )
+        mape = self.calculate_mape(y_true, y_pred)
 
-        r2 = r2_score(
-            y_true,
-            y_pred
-        )
+        r2 = r2_score(y_true, y_pred)
 
         errors = y_pred - y_true
 
@@ -93,7 +73,11 @@ class ModelEvaluator:
             else 0
         )
 
-        confidence_interval = 1.96 * np.std(errors)
+        z_score = stats.norm.ppf(
+            1 - (1 - self.confidence_level) / 2
+        )
+
+        confidence_interval = z_score * rmse
 
         return {
             "mae": mae,
@@ -106,33 +90,17 @@ class ModelEvaluator:
             "confidence_interval": confidence_interval
         }
 
-    # =====================================================
-    # CLASSIFICATION METRICS
-    # =====================================================
-
-    def create_binary_labels(
-        self,
-        values,
-        threshold
-    ):
+    def create_binary_labels(self, values, threshold):
         """
         Converte valores contínuos em classes binárias.
-
-        Exemplo:
-        pontos > 100 = 1
-        pontos <= 100 = 0
         """
 
         return np.where(values >= threshold, 1, 0)
 
-    def classification_metrics(
-        self,
-        y_true,
-        y_pred,
-        threshold
-    ):
+    def classification_metrics(self, y_true, y_pred, threshold):
         """
         Calcula métricas classificatórias.
+        O AUC utiliza y_pred contínuo, não apenas rótulos binários.
         """
 
         y_true_binary = self.create_binary_labels(
@@ -152,18 +120,16 @@ class ModelEvaluator:
 
         f1 = f1_score(
             y_true_binary,
-            y_pred_binary
+            y_pred_binary,
+            zero_division=0
         )
 
         try:
-
             auc = roc_auc_score(
                 y_true_binary,
-                y_pred_binary
+                y_pred
             )
-
-        except:
-
+        except Exception:
             auc = np.nan
 
         cm = confusion_matrix(
@@ -178,32 +144,29 @@ class ModelEvaluator:
             "confusion_matrix": cm
         }
 
-    # =====================================================
-    # PROBABILITY INTERPRETATION
-    # =====================================================
-
     def probability_from_prediction(
         self,
         prediction,
-        threshold
+        threshold,
+        rmse_model
     ):
         """
-        Calcula probabilidade simples baseada
-        na distância para o threshold.
+        Calcula probabilidade baseada na distância entre previsão e threshold,
+        usando o RMSE como medida de incerteza do modelo.
         """
 
-        difference = prediction - threshold
+        if rmse_model is None or rmse_model <= 0:
+            raise ValueError(
+                "rmse_model deve ser informado e maior que zero."
+            )
 
-        probability = 1 / (
-            1 + np.exp(-difference / 10)
-        )
+        z_score = (prediction - threshold) / rmse_model
+
+        probability = stats.norm.cdf(z_score)
 
         return probability
 
-    def probability_label(
-        self,
-        probability
-    ):
+    def probability_label(self, probability):
         """
         Converte probabilidade em interpretação textual.
         """
@@ -221,20 +184,20 @@ class ModelEvaluator:
         self,
         target_name,
         prediction,
-        threshold
+        threshold,
+        rmse_model
     ):
         """
         Gera interpretação textual para gestores.
         """
 
         probability = self.probability_from_prediction(
-            prediction,
-            threshold
+            prediction=prediction,
+            threshold=threshold,
+            rmse_model=rmse_model
         )
 
-        label = self.probability_label(
-            probability
-        )
+        label = self.probability_label(probability)
 
         probability_percent = probability * 100
 
@@ -243,7 +206,7 @@ class ModelEvaluator:
             f"{prediction:.1f} {target_name}, "
             f"com {probability_percent:.1f}% "
             f"de chance ({label}) de superar "
-            f"{threshold}."
+            f"{threshold:.2f}."
         )
 
         return {
@@ -255,16 +218,7 @@ class ModelEvaluator:
             "text": text
         }
 
-    # =====================================================
-    # FULL EVALUATION
-    # =====================================================
-
-    def full_evaluation(
-        self,
-        y_true,
-        y_pred,
-        threshold
-    ):
+    def full_evaluation(self, y_true, y_pred, threshold):
         """
         Executa avaliação completa.
         """

@@ -22,7 +22,7 @@ Prever quantos pontos, rebotes e assistências a equipe fará.
 Este módulo usa:
 - modelos LSTM treinados;
 - feature set Hybrid;
-- Sliding Window vencedora;
+- Sliding Window vencedora pelo menor RMSE;
 - ModelEvaluator.
 =========================================================
 """
@@ -49,7 +49,8 @@ class NBAPredictor:
         team_name: str,
         feature_set_name: str = "hybrid",
         tables_dir: str | Path = "outputs/tables",
-        models_dir: str | Path = "outputs/models"
+        models_dir: str | Path = "outputs/models",
+        metrics_dir: str | Path = "outputs/metrics"
     ):
         self.df = dataframe.copy()
         self.team_name = team_name
@@ -57,20 +58,68 @@ class NBAPredictor:
 
         self.tables_dir = Path(tables_dir)
         self.models_dir = Path(models_dir)
+        self.metrics_dir = Path(metrics_dir)
 
         self.evaluator = ModelEvaluator()
 
-        self.best_windows = {
-            "PTS": 5,
-            "REB": 5,
-            "AST": 10
-        }
+        self.best_model_info = self.load_best_model_info()
 
         self.fixed_thresholds = {
             "PTS": 100,
             "REB": 30,
             "AST": 20
         }
+
+    def load_best_model_info(self) -> dict:
+        """
+        Carrega automaticamente a melhor janela temporal e o RMSE
+        de cada target, com base no menor RMSE registrado em:
+        outputs/metrics/lstm_results.csv.
+        """
+
+        results_path = self.metrics_dir / "lstm_results.csv"
+
+        if not results_path.exists():
+            raise FileNotFoundError(
+                f"Arquivo de resultados LSTM não encontrado: {results_path}"
+            )
+
+        results_df = pd.read_csv(results_path)
+
+        required_columns = {"target", "window_size", "rmse"}
+
+        if not required_columns.issubset(results_df.columns):
+            raise ValueError(
+                "O arquivo lstm_results.csv precisa conter as colunas: "
+                "target, window_size e rmse."
+            )
+
+        best_model_info = {}
+
+        for target in ["PTS", "REB", "AST"]:
+
+            target_df = results_df[
+                results_df["target"] == target
+            ].copy()
+
+            if target_df.empty:
+                raise ValueError(
+                    f"Nenhum resultado encontrado para o target {target}."
+                )
+
+            best_row = target_df.loc[
+                target_df["rmse"].idxmin()
+            ]
+
+            best_model_info[target] = {
+                "window_size": int(best_row["window_size"]),
+                "rmse": float(best_row["rmse"])
+            }
+
+        print("[INFO] Melhores modelos carregados automaticamente:")
+        print(best_model_info)
+
+        return best_model_info
 
     def get_team_data(self) -> pd.DataFrame:
         """
@@ -159,9 +208,10 @@ class NBAPredictor:
         window_size: int
     ):
         """
-        Prepara a última janela temporal da equipe.
+        Prepara a última janela temporal real da equipe.
 
-        Essa janela será usada para prever a próxima partida.
+        Essa janela será usada para prever a próxima partida ainda
+        não presente na base.
         """
 
         if len(team_df) < window_size:
@@ -202,7 +252,8 @@ class NBAPredictor:
 
         team_df = self.get_team_data()
 
-        window_size = self.best_windows[target]
+        window_size = self.best_model_info[target]["window_size"]
+        rmse_model = self.best_model_info[target]["rmse"]
 
         features = self.load_features_for_target(target)
 
@@ -235,7 +286,8 @@ class NBAPredictor:
             self.evaluator.create_executive_interpretation(
                 target_name=target,
                 prediction=prediction,
-                threshold=team_average
+                threshold=team_average,
+                rmse_model=rmse_model
             )
         )
 
@@ -243,13 +295,15 @@ class NBAPredictor:
             self.evaluator.create_executive_interpretation(
                 target_name=target,
                 prediction=prediction,
-                threshold=fixed_threshold
+                threshold=fixed_threshold,
+                rmse_model=rmse_model
             )
         )
 
         return {
             "target": target,
             "window_size": window_size,
+            "rmse_model": rmse_model,
             "prediction": prediction,
             "team_average": team_average,
             "fixed_threshold": fixed_threshold,
@@ -288,6 +342,7 @@ class NBAPredictor:
                 "team_name": self.team_name,
                 "target": target,
                 "window_size": result["window_size"],
+                "rmse_model": result["rmse_model"],
                 "prediction": result["prediction"],
                 "team_average": result["team_average"],
                 "fixed_threshold": result["fixed_threshold"],

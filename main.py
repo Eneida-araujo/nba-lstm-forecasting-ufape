@@ -19,10 +19,16 @@ Fluxo:
 11. Treinamento LSTM.
 12. Predições finais.
 13. Geração de gráficos e métricas.
-
 =========================================================
 """
+
+import os
+import random
+
+import numpy as np
 import pandas as pd
+import tensorflow as tf
+
 from src.config.settings import (
     BASE_A_FILE,
     BASE_B_FILE
@@ -32,7 +38,7 @@ from src.data.loader import DataLoader
 from src.data.merger import DataMerger
 from src.data.preprocessing import DataPreprocessor
 from src.data.validation import DataValidator
-from src.models.predictor import NBAPredictor
+
 from src.features.engineering import FeatureEngineer
 from src.features.correlation_filter import CorrelationFilter
 from src.features.pvalue_selection import PValueSelector
@@ -40,9 +46,28 @@ from src.features.random_forest_importance import RandomForestFeatureImportance
 from src.features.feature_sets import FeatureSetBuilder
 from src.features.feature_sets_summary import FeatureSetsSummary
 from src.features.feature_experiments import FeatureExperimentRunner
+
 from src.models.windowing import SlidingWindowGenerator
 from src.models.lstm_trainer import LSTMTrainer
+from src.models.predictor import NBAPredictor
+
 from src.visualization.plots import PlotGenerator
+
+
+# =====================================================
+# REPRODUTIBILIDADE
+# =====================================================
+
+SEED = 42
+
+os.environ["PYTHONHASHSEED"] = str(SEED)
+os.environ["TF_DETERMINISTIC_OPS"] = "1"
+
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
+tf.keras.utils.set_random_seed(SEED)
+
 
 def main():
 
@@ -80,10 +105,6 @@ def main():
 
     DataValidator.validate_dataframe(filtered_df)
 
-    # =====================================================
-    # P-VALUE SELECTION
-    # =====================================================
-
     for target in ["PTS", "REB", "AST"]:
 
         pvalue_selector = PValueSelector(
@@ -100,9 +121,6 @@ def main():
             f"{len(selected_features)} "
             f"features selecionadas por p-value."
         )
-    # =====================================================
-    # RANDOM FOREST FEATURE IMPORTANCE
-    # =====================================================
 
     for target in ["PTS", "REB", "AST"]:
 
@@ -110,7 +128,7 @@ def main():
             dataframe=filtered_df,
             target_column=target,
             n_estimators=300,
-            random_state=42,
+            random_state=SEED,
             output_dir="outputs/tables"
         )
 
@@ -120,9 +138,6 @@ def main():
             f"[INFO] Target {target}: "
             f"{len(importance_df)} features ranqueadas pelo Random Forest."
         )
-    # =====================================================
-    # FEATURE SETS
-    # =====================================================
 
     for target in ["PTS", "REB", "AST"]:
 
@@ -138,9 +153,6 @@ def main():
             f"[INFO] Target {target}: "
             f"{len(feature_sets)} conjuntos de features criados."
         )
-    # =====================================================
-    # FEATURE SETS SUMMARY
-    # =====================================================
 
     summary_builder = FeatureSetsSummary(
         tables_dir="outputs/tables",
@@ -154,10 +166,6 @@ def main():
     print("\n[INFO] Quadro-resumo dos feature sets:")
     print(feature_sets_summary)
 
-    # =====================================================
-    # FEATURE EXPERIMENTS
-    # =====================================================
-
     for target in ["PTS", "REB", "AST"]:
 
         experiment_runner = FeatureExperimentRunner(
@@ -165,15 +173,12 @@ def main():
             target_column=target,
             tables_dir="outputs/tables",
             output_dir="outputs/metrics",
-            random_state=42
+            random_state=SEED
         )
 
         experiment_results = experiment_runner.run()
 
-        print(
-            f"\n[INFO] Ranking dos feature sets para {target}:"
-        )
-
+        print(f"\n[INFO] Ranking dos feature sets para {target}:")
         print(
             experiment_results[
                 [
@@ -186,31 +191,16 @@ def main():
                 ]
             ]
         )
-    # =====================================================
-    # SLIDING WINDOWS
-    # =====================================================
 
     print("\n================================================")
     print("SLIDING WINDOW TEST")
     print("================================================")
 
-    # =====================================================
-    # Escolhendo target principal
-    # =====================================================
-
     target = "PTS"
-
-    # =====================================================
-    # Carrega feature sets
-    # =====================================================
 
     feature_sets_df = pd.read_csv(
         "outputs/tables/feature_sets_pts.csv"
     )
-
-    # =====================================================
-    # Escolhe HYBRID (melhor conjunto)
-    # =====================================================
 
     hybrid_features = (
         feature_sets_df[
@@ -231,10 +221,6 @@ def main():
         f"{len(hybrid_features)}"
     )
 
-    # =====================================================
-    # Testa todas as janelas exigidas
-    # =====================================================
-
     for window_size in [5, 10, 15, 20]:
 
         window_generator = SlidingWindowGenerator(
@@ -245,10 +231,6 @@ def main():
         )
 
         X, y = window_generator.run()
-
-    # =====================================================
-    # LSTM TRAINING
-    # =====================================================
 
     lstm_trainer = LSTMTrainer(
         dataframe=filtered_df,
@@ -264,10 +246,6 @@ def main():
 
     print("\n[INFO] Resultados finais da LSTM:")
     print(lstm_results)
-
-    # =====================================================
-    # FINAL PREDICTIONS
-    # =====================================================
 
     print("\n================================================")
     print("FINAL NBA PREDICTIONS")
@@ -287,7 +265,8 @@ def main():
             team_name=team_name,
             feature_set_name="hybrid",
             tables_dir="outputs/tables",
-            models_dir="outputs/models"
+            models_dir="outputs/models",
+            metrics_dir="outputs/metrics"
         )
 
         team_report = predictor.run()
@@ -305,10 +284,6 @@ def main():
 
     print(final_predictions_df)
 
-    # =====================================================
-    # SAVE FINAL REPORT
-    # =====================================================
-
     final_predictions_path = (
         "outputs/metrics/final_predictions.csv"
     )
@@ -323,10 +298,6 @@ def main():
         f"{final_predictions_path}"
     )
 
-    # =====================================================
-    # RF6 - VISUALIZAÇÕES
-    # =====================================================
-
     plot_generator = PlotGenerator(
         predictions_dir="outputs/predictions",
         metrics_dir="outputs/metrics",
@@ -334,6 +305,7 @@ def main():
     )
 
     plot_generator.run_best_models()
+
 
 if __name__ == "__main__":
     main()

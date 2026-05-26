@@ -269,9 +269,10 @@ As sequências foram organizadas no formato:
 
 ```python
 (samples, timesteps, features)
+```
 
 O objetivo foi permitir que a LSTM aprendesse padrões temporais sequenciais das equipes ao longo da temporada.
-```
+
 ---
 
 ## 12. Arquitetura LSTM
@@ -323,6 +324,8 @@ Foram utilizadas técnicas de regularização para reduzir overfitting:
 - `recurrent_dropout=0.10`;
 - `kernel_regularizer=l2(0.001)`.
 
+Essas estratégias tiveram como objetivo aumentar a capacidade de generalização do modelo e reduzir instabilidades durante o treinamento temporal.
+
 ---
 
 ## 13. Treinamento dos Modelos
@@ -357,6 +360,8 @@ Os modelos foram treinados separadamente para:
 
 Também foram realizados experimentos comparando as diferentes Sliding Windows.
 
+O sistema realiza seleção automática da melhor configuração temporal utilizando o menor RMSE obtido durante os experimentos com Sliding Windows.
+
 ---
 
 ## 14. Predição Final
@@ -367,11 +372,12 @@ O processo de inferência foi implementado em:
 
 Nessa etapa o sistema realiza:
 
-- carregamento dos modelos treinados;
-- carregamento dos scalers;
-- execução das previsões;
-- cálculo de previsões finais;
-- geração de interpretações quantitativas.
+- carregamento automático do melhor modelo baseado no menor RMSE;
+- carregamento automático da melhor Sliding Window;
+- utilização da última janela temporal real da equipe;
+- execução das previsões da próxima partida;
+- cálculo probabilístico utilizando RMSE;
+- geração de interpretações quantitativas e executivas.
 
 As previsões finais foram armazenadas em:
 
@@ -385,7 +391,7 @@ A avaliação quantitativa dos modelos foi implementada em:
 
 - `src/models/evaluation.py`
 
-Foram utilizadas métricas de regressão e classificação, incluindo:
+Foram utilizadas principalmente métricas de regressão para avaliação quantitativa dos modelos, além de análises classificatórias complementares para interpretação executiva dos resultados.
 
 - RMSE;
 - MAE;
@@ -404,6 +410,16 @@ Também foram calculados:
 - intervalos de confiança;
 - probabilidades interpretativas;
 - análises residuais.
+
+As probabilidades interpretativas foram calculadas utilizando o RMSE dos modelos como medida de dispersão preditiva.
+
+As análises classificatórias utilizaram thresholds fixos definidos pela atividade acadêmica:
+
+- PTS ≥ 100
+- REB ≥ 30
+- AST ≥ 20
+
+Como equipes de alto desempenho frequentemente ultrapassam esses valores, algumas matrizes de confusão apresentaram concentração da classe positiva (“Sim”), comportamento associado à distribuição real dos dados e não a falhas do modelo.
 
 Essa etapa permitiu avaliar:
 
@@ -473,6 +489,14 @@ A arquitetura foi estruturada para permitir:
 - auditoria metodológica;
 - expansão futura da pesquisa.
 
+Também foram utilizadas seeds fixas para:
+
+- Python;
+- NumPy;
+- TensorFlow.
+
+Essa estratégia teve como objetivo reduzir variabilidade experimental e aumentar a reprodutibilidade dos resultados.
+
 ---
 
 ## 19. Mapeamento entre Etapas e Arquivos
@@ -498,3 +522,16 @@ A arquitetura foi estruturada para permitir:
 | Predição final | `src/models/predictor.py` |
 | Avaliação experimental | `src/models/evaluation.py` |
 | Visualizações | `src/visualization/plots.py` |
+
+## 20. Considerações Metodológicas
+
+O projeto foi estruturado utilizando abordagem híbrida entre métodos estatísticos tradicionais e Deep Learning temporal.
+
+As etapas de seleção estatística, benchmark experimental, Sliding Windows e avaliação baseada em RMSE foram organizadas visando maximizar:
+
+- robustez preditiva;
+- estabilidade temporal;
+- interpretabilidade dos resultados;
+- reprodutibilidade científica.
+
+A arquitetura final priorizou forecasting temporal real da próxima partida, utilizando exclusivamente informações históricas anteriores ao evento previsto, evitando vazamento temporal de dados futuros.

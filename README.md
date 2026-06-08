@@ -315,6 +315,30 @@ Esse comportamento é utilizado tanto no pipeline de previsão quanto no pipelin
 
 ---
 
+# Execução Rápida
+
+git clone https://github.com/Eneida-araujo/nba-lstm-forecasting-ufape.git
+
+cd nba-lstm-forecasting-ufape
+
+python -m venv venv
+
+venv\Scripts\activate
+
+pip install -r requirements.txt
+
+python main.py
+
+# Ambiente utilizado
+
+Python 3.10.11
+TensorFlow 2.21
+scikit-learn
+pandas
+numpy
+matplotlib
+statsmodels
+
 # Reprodutibilidade
 
 ## 1. Clonar repositório
@@ -367,6 +391,7 @@ Possíveis melhorias futuras incluem:
 # Autores
 
 Eneida Glauce de Araújo Medeiros
+
 Kenneth Yan Santana Oliveira
 
 Mestranda em Ciência da Computação  
